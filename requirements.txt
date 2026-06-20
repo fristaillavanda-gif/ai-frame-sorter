@@ -1,0 +1,5 @@
+flask
+google-generativeai
+pillow
+gunicorn
+werkzeug
