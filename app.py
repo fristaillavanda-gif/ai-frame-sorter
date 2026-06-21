@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "stable_v3_key_2026"
+app.secret_key = "stable_v4_key"
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "sorted_output"
@@ -24,7 +24,7 @@ HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Frame Sorter • v3</title>
+    <title>AI Frame Sorter • v4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -41,7 +41,7 @@ HTML = """
                     <i class="fa-solid fa-film text-white text-3xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v3</span></h1>
+                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v4</span></h1>
                     <p class="text-zinc-400 text-sm">Стабильная версия • Gemini 1.5 Flash</p>
                 </div>
             </div>
@@ -288,9 +288,9 @@ def analyze():
             file.save(path)
             try:
                 img = Image.open(path)
-                img.thumbnail((480, 480))
+                img.thumbnail((400, 400))
                 img = img.convert("RGB")
-                img.save(path, "JPEG", quality=60, optimize=True)
+                img.save(path, "JPEG", quality=55, optimize=True)
             except:
                 pass
             image_paths.append(path)
@@ -299,8 +299,8 @@ def analyze():
         return jsonify({"success": False, "error": "Изображения не загружены"})
 
     try:
-        # === ПАРТИИ ПО 15 КАРТИНОК ===
-        BATCH_SIZE = 15
+        # === ПАРТИИ ПО 8 КАРТИНОК ===
+        BATCH_SIZE = 8
         all_descriptions = []
 
         for i in range(0, len(image_paths), BATCH_SIZE):
@@ -312,7 +312,7 @@ def analyze():
                     "original_name": os.path.basename(path),
                     "description": desc
                 })
-                time.sleep(1.5)
+                time.sleep(2.0)
 
         order = get_sorted_order([d["description"] for d in all_descriptions], prompt, model)
 
@@ -322,7 +322,7 @@ def analyze():
             results.append({
                 "new_index": f"{new_idx+1:04d}",
                 "original_name": item["original_name"],
-                "description": item["description"][:70],
+                "description": item["description"][:65],
                 "status": "matched"
             })
 
