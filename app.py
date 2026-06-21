@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "ultra_stable_v5"
+app.secret_key = "final_stable_v6"
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "sorted_output"
@@ -23,7 +23,7 @@ HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Frame Sorter • v5</title>
+    <title>AI Frame Sorter • v6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -40,8 +40,8 @@ HTML = """
                     <i class="fa-solid fa-film text-white text-3xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v5</span></h1>
-                    <p class="text-zinc-400 text-sm">Максимально стабильная версия</p>
+                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v6</span></h1>
+                    <p class="text-zinc-400 text-sm">Стабильная версия • Gemini 2.0 Flash</p>
                 </div>
             </div>
         </div>
@@ -273,14 +273,15 @@ def analyze():
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        # === ПРАВИЛЬНАЯ МОДЕЛЬ ===
+        model = genai.GenerativeModel('gemini-2.0-flash')
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
     temp_dir = tempfile.mkdtemp(dir=UPLOAD_FOLDER)
     image_paths = []
 
-    # Очень сильное сжатие
+    # Сжимаем картинки
     for file in request.files.getlist('images'):
         if file.filename:
             path = os.path.join(temp_dir, file.filename)
@@ -298,7 +299,7 @@ def analyze():
         return jsonify({"success": False, "error": "Изображения не загружены"})
 
     try:
-        # === ПАРТИИ ПО 6 КАРТИНОК (самый стабильный вариант) ===
+        # === ПАРТИИ ПО 6 КАРТИНОК ===
         BATCH_SIZE = 6
         all_descriptions = []
 
@@ -311,7 +312,7 @@ def analyze():
                     "original_name": os.path.basename(path),
                     "description": desc
                 })
-                time.sleep(2.2)
+                time.sleep(2.0)
 
         order = get_sorted_order([d["description"] for d in all_descriptions], prompt, model)
 
