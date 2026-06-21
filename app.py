@@ -10,21 +10,20 @@ import shutil
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "stable_v4_key"
+app.secret_key = "ultra_stable_v5"
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "sorted_output"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ================== ПОЛНЫЙ HTML ==================
 HTML = """
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Frame Sorter • v4</title>
+    <title>AI Frame Sorter • v5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -41,8 +40,8 @@ HTML = """
                     <i class="fa-solid fa-film text-white text-3xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v4</span></h1>
-                    <p class="text-zinc-400 text-sm">Стабильная версия • Gemini 1.5 Flash</p>
+                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v5</span></h1>
+                    <p class="text-zinc-400 text-sm">Максимально стабильная версия</p>
                 </div>
             </div>
         </div>
@@ -281,16 +280,16 @@ def analyze():
     temp_dir = tempfile.mkdtemp(dir=UPLOAD_FOLDER)
     image_paths = []
 
-    # Сжимаем картинки
+    # Очень сильное сжатие
     for file in request.files.getlist('images'):
         if file.filename:
             path = os.path.join(temp_dir, file.filename)
             file.save(path)
             try:
                 img = Image.open(path)
-                img.thumbnail((400, 400))
+                img.thumbnail((360, 360))
                 img = img.convert("RGB")
-                img.save(path, "JPEG", quality=55, optimize=True)
+                img.save(path, "JPEG", quality=50, optimize=True)
             except:
                 pass
             image_paths.append(path)
@@ -299,8 +298,8 @@ def analyze():
         return jsonify({"success": False, "error": "Изображения не загружены"})
 
     try:
-        # === ПАРТИИ ПО 8 КАРТИНОК ===
-        BATCH_SIZE = 8
+        # === ПАРТИИ ПО 6 КАРТИНОК (самый стабильный вариант) ===
+        BATCH_SIZE = 6
         all_descriptions = []
 
         for i in range(0, len(image_paths), BATCH_SIZE):
@@ -312,7 +311,7 @@ def analyze():
                     "original_name": os.path.basename(path),
                     "description": desc
                 })
-                time.sleep(2.0)
+                time.sleep(2.2)
 
         order = get_sorted_order([d["description"] for d in all_descriptions], prompt, model)
 
@@ -322,7 +321,7 @@ def analyze():
             results.append({
                 "new_index": f"{new_idx+1:04d}",
                 "original_name": item["original_name"],
-                "description": item["description"][:65],
+                "description": item["description"][:60],
                 "status": "matched"
             })
 
