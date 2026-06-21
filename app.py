@@ -120,7 +120,6 @@ HTML = """
                     <div id="progress-bar" class="h-3 bg-gradient-to-r from-blue-500 to-violet-600 rounded-full transition-all" style="width:0%"></div>
                 </div>
                 <div id="progress-status" class="text-sm text-zinc-400">Подготовка...</div>
-                <div id="batch-info" class="text-xs text-zinc-500 mt-2"></div>
             </div>
         </div>
 
@@ -279,15 +278,14 @@ def analyze():
 
     try:
         genai.configure(api_key=api_key)
-        # === ИСПОЛЬЗУЕМ АКТУАЛЬНУЮ МОДЕЛЬ ===
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')   # ← АКТУАЛЬНАЯ МОДЕЛЬ
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
     temp_dir = tempfile.mkdtemp(dir=UPLOAD_FOLDER)
     image_paths = []
 
-    # === СИЛЬНОЕ СЖАТИЕ ===
+    # === СИЛЬНОЕ СЖАТИЕ КАРТИНОК ===
     for file in request.files.getlist('images'):
         if file.filename:
             path = os.path.join(temp_dir, file.filename)
