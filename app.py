@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "final_stable_v6"
+app.secret_key = "quota_optimized_v7"
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "sorted_output"
@@ -23,7 +23,7 @@ HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Frame Sorter • v6</title>
+    <title>AI Frame Sorter • v7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -40,8 +40,8 @@ HTML = """
                     <i class="fa-solid fa-film text-white text-3xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v6</span></h1>
-                    <p class="text-zinc-400 text-sm">Стабильная версия • Gemini 2.0 Flash</p>
+                    <h1 class="text-4xl font-semibold tracking-tighter">AI Frame Sorter <span class="text-blue-400 text-2xl">v7</span></h1>
+                    <p class="text-zinc-400 text-sm">Оптимизировано под квоту</p>
                 </div>
             </div>
         </div>
@@ -273,7 +273,6 @@ def analyze():
 
     try:
         genai.configure(api_key=api_key)
-        # === ПРАВИЛЬНАЯ МОДЕЛЬ ===
         model = genai.GenerativeModel('gemini-2.0-flash')
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -281,16 +280,16 @@ def analyze():
     temp_dir = tempfile.mkdtemp(dir=UPLOAD_FOLDER)
     image_paths = []
 
-    # Сжимаем картинки
+    # Сильное сжатие
     for file in request.files.getlist('images'):
         if file.filename:
             path = os.path.join(temp_dir, file.filename)
             file.save(path)
             try:
                 img = Image.open(path)
-                img.thumbnail((360, 360))
+                img.thumbnail((320, 320))
                 img = img.convert("RGB")
-                img.save(path, "JPEG", quality=50, optimize=True)
+                img.save(path, "JPEG", quality=45, optimize=True)
             except:
                 pass
             image_paths.append(path)
@@ -299,8 +298,8 @@ def analyze():
         return jsonify({"success": False, "error": "Изображения не загружены"})
 
     try:
-        # === ПАРТИИ ПО 6 КАРТИНОК ===
-        BATCH_SIZE = 6
+        # === ПАРТИИ ПО 4 КАРТИНКИ + БОЛЬШАЯ ЗАДЕРЖКА ===
+        BATCH_SIZE = 4
         all_descriptions = []
 
         for i in range(0, len(image_paths), BATCH_SIZE):
@@ -312,7 +311,7 @@ def analyze():
                     "original_name": os.path.basename(path),
                     "description": desc
                 })
-                time.sleep(2.0)
+                time.sleep(4.0)   # ← увеличил до 4 секунд
 
         order = get_sorted_order([d["description"] for d in all_descriptions], prompt, model)
 
@@ -322,7 +321,7 @@ def analyze():
             results.append({
                 "new_index": f"{new_idx+1:04d}",
                 "original_name": item["original_name"],
-                "description": item["description"][:60],
+                "description": item["description"][:55],
                 "status": "matched"
             })
 
@@ -351,7 +350,7 @@ def get_image_description(image_path, model):
     try:
         img = Image.open(image_path)
         response = model.generate_content([
-            "Опиши максимально кратко, что происходит на картинке. Одно предложение.",
+            "Кратко опиши, что происходит на картинке. Одно короткое предложение.",
             img
         ])
         return response.text.strip()
@@ -361,7 +360,7 @@ def get_image_description(image_path, model):
 
 def get_sorted_order(descriptions, prompt, model):
     text = "\n".join([f"{i+1}. {d}" for i, d in enumerate(descriptions)])
-    full_prompt = f"""Расставь номера кадров в правильном порядке по промпту:\n{prompt}\n\n{text}\n\nОтветь только номерами через запятую."""
+    full_prompt = f"""Расставь номера кадров по порядку:\n{prompt}\n\n{text}\n\nОтветь только номерами через запятую."""
     try:
         resp = model.generate_content(full_prompt)
         order = [int(x.strip()) - 1 for x in resp.text.split(",") if x.strip().isdigit()]
